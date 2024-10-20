@@ -1,5 +1,5 @@
-import type { DecodedValue, EncodedValue, Handler, IDecoder } from "./types";
-import { integerDecodingHandler, listDecodingHandler, stringDecodingHandler } from "./decode-handlers";
+import type { DecodedValue, DecodedValueType, EncodedValue, Handler, IDecoder } from "./types";
+import { integerDecodingHandler, decodeBencodedList, stringDecodingHandler } from "./decode-handlers";
 
 class Decoder implements IDecoder {
     private handlers: Handler<DecodedValue | DecodedValue[]>[] = [];
@@ -11,12 +11,12 @@ class Decoder implements IDecoder {
         this.setup?.(this);
     }
 
-    register<T extends DecodedValue | DecodedValue[]>(handler: Handler<T>) {
+    register<T>(handler: Handler<DecodedValueType<T>>) {
         this.handlers.push(handler);
     }
 
     decode(text: EncodedValue): DecodedValue | DecodedValue[] | null {
-        let result: DecodedValue | DecodedValue[] | null = null;
+        let result: [any, number] | null = null;
 
         for (const handler of this.handlers) {
             if (handler.check(text)) {
@@ -27,7 +27,7 @@ class Decoder implements IDecoder {
 
         // run teardown first
         this.teardown?.(this);
-        return result;
+        return result?.[0] ?? null;
     }
 }
 
@@ -36,7 +36,7 @@ const decoder = new Decoder(
     (decoder) => {
         decoder.register(stringDecodingHandler);
         decoder.register(integerDecodingHandler);
-        decoder.register(listDecodingHandler);
+        decoder.register(decodeBencodedList);
     }
 );
 

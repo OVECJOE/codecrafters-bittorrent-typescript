@@ -1,9 +1,9 @@
 export type EncodedValue = string;
 export type DecodedValue = number | string;
-export type DecodedValueType<T> = T extends DecodedValue | DecodedValue[] ? T : never;
+export type DecodedValueType<T> = T extends DecodedValue | DecodedValue[] ? T : any;
 
 export type Handler<T> = {
-    action: (text: EncodedValue) => DecodedValueType<T>;
+    action: (text: EncodedValue) => [DecodedValueType<T>, number];
     check: (text: EncodedValue) => boolean;
 }
 
