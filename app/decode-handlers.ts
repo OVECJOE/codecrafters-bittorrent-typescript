@@ -117,3 +117,63 @@ export const decodeBencodedList: Handler<(DecodedValue | DecodedValue[])[]> = {
         return /^l.*e/.test(text);
     }
 }
+
+/**
+ * Decodes a bencoded dictionary
+ * @param text bencoded dictionary to decode
+ * @returns {[Record<string, DecodedValue | DecodedValue[]>, number]} a tuple containing the decoded dictionary and the number of characters consumed
+ * 
+ * @example
+ * decodeBencodedDictionary("d3:cow3:moo4:spam4:eggse") // { cow: "moo", spam: "eggs" }
+ * decodeBencodedDictionary("d4:spaml1:a1:bee") // { spam: ["a", "b"] }
+ * decodeBencodedDictionary("d9:publisher3:bob17:publisher-webpage15:www.example.com18:publisher.location4:homee") // { publisher: "bob", "publisher-webpage": "www.example.com", "publisher.location": "home" }
+ */
+export const decodeBencodedDictionary: Handler<Record<string, DecodedValue | DecodedValue[]>> = {
+    action(text) {
+        if (text[0] !== "d" || text.indexOf("e") === -1) {
+            throw new Error("Invalid bencoded dictionary");
+        }
+
+        const result: Record<string, DecodedValue | DecodedValue[]> = {};
+        
+        let index = 1;
+        let decoded: any;
+        let key: string;
+        while (index < text.length) {
+            let consumedSize: number = 0;
+            let tail = text.substring(index);
+
+            if (decodeBencodedString.check(tail)) {
+                [key, consumedSize] = decodeBencodedString.action(tail);
+            } else if (tail[0] === 'e') {
+                index++;
+                break;
+            } else {
+                throw new Error("Invalid bencoded dictionary");
+            }
+
+            index += consumedSize;
+            tail = text.substring(index);
+
+            if (decodeBencodedString.check(tail)) {
+                [decoded, consumedSize] = decodeBencodedString.action(tail);
+            } else if (decodeBencodedInteger.check(tail)) {
+                [decoded, consumedSize] = decodeBencodedInteger.action(tail);
+            } else if (decodeBencodedList.check(tail)) {
+                [decoded, consumedSize] = decodeBencodedList.action(tail);
+            } else if (decodeBencodedDictionary.check(tail)) {
+                [decoded, consumedSize] = decodeBencodedDictionary.action(tail);
+            } else {
+                throw new Error("Invalid bencoded dictionary");
+            }
+
+            result[key] = decoded;
+            index += consumedSize;
+        }
+
+        return [result, index];
+    },
+    check(text) {
+        return /^d.*e/.test(text);
+    }
+}
