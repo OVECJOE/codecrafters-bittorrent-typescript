@@ -59,8 +59,7 @@ const stringDecodingHandler: Handler<string> = {
             throw new Error("Invalid bencoded string");
         }
 
-        return text.substring(colonIndex + 1);
-        // return text.substring(colonIndex + 1, colonIndex + 1 + length);
+        return text.substring(colonIndex + 1, colonIndex + 1 + length);
     },
     /**
      * Checks if the given text is a bencoded string
