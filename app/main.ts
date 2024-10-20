@@ -1,7 +1,7 @@
 import type { DecodedValue, EncodedValue } from "./types";
 import decoder from "./decoder";
 
-function decodeBencode(bencodedValue: EncodedValue): DecodedValue {
+function decodeBencode(bencodedValue: EncodedValue): DecodedValue | DecodedValue[] {
   const decoded = decoder.decode(bencodedValue);
   if (decoded === null) {
     throw new Error("Invalid bencoded value");
