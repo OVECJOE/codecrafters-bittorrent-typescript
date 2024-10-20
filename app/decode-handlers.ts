@@ -1,6 +1,6 @@
 import type { DecodedValue, Handler } from "./types";
 
-export const stringDecodingHandler: Handler<string> = {
+export const decodeBencodedString: Handler<string> = {
     /**
      * Decodes a bencoded string
      * @param text bencoded string to decode
@@ -35,7 +35,7 @@ export const stringDecodingHandler: Handler<string> = {
     }
 }
 
-export const integerDecodingHandler: Handler<number> = {
+export const decodeBencodedInteger: Handler<number> = {
     /**
      * Decodes a bencoded integer
      * @param text becoded string to decode
@@ -82,40 +82,36 @@ export const integerDecodingHandler: Handler<number> = {
  */
 export const decodeBencodedList: Handler<(DecodedValue | DecodedValue[])[]> = {
     action(text) {
-        const endOfList = text.lastIndexOf("e");
-        if (text[0] !== "l" || endOfList === -1) {
+        if (text[0] !== "l" || text.indexOf("e") === -1) {
             throw new Error("Invalid bencoded list");
         }
 
-        const result: ReturnType<typeof decodeBencodedList.action>[0] = [];
+        const result: (DecodedValue | DecodedValue[])[] = [];
         
         let index = 1;
         let decoded: any;
-        while (index < endOfList) {
+        while (index < text.length) {
             let consumedSize: number = 0;
-            let tail = text.substring(index, endOfList);
+            let tail = text.substring(index);
 
-            if (stringDecodingHandler.check(tail)) {
-                [decoded, consumedSize] = stringDecodingHandler.action(tail);
-            } else if (integerDecodingHandler.check(tail)) {
-                [decoded, consumedSize] = integerDecodingHandler.action(tail);
+            if (decodeBencodedString.check(tail)) {
+                [decoded, consumedSize] = decodeBencodedString.action(tail);
+            } else if (decodeBencodedInteger.check(tail)) {
+                [decoded, consumedSize] = decodeBencodedInteger.action(tail);
             } else if (this.check(tail)) {
-                const listEnd = tail.lastIndexOf("e");
-                if (listEnd === -1) {
-                    throw new Error("Invalid bencoded list");
-                }
-
-                [decoded, consumedSize] = this.action(tail.substring(0, listEnd + 1));
-            } else {
+                [decoded, consumedSize] = this.action(tail);
+            } else if (tail[0] === 'e') {
                 index++;
-                continue;
+                break;
+            } else {
+                throw new Error("Invalid bencoded list");
             }
 
             result.push(decoded);
             index += consumedSize;
         }
 
-        return [result, endOfList + 1];
+        return [result, index];
     },
     check(text) {
         return /^l.*e/.test(text);

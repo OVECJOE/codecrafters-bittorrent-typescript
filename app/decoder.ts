@@ -1,5 +1,5 @@
 import type { DecodedValue, DecodedValueType, EncodedValue, Handler, IDecoder } from "./types";
-import { integerDecodingHandler, decodeBencodedList, stringDecodingHandler } from "./decode-handlers";
+import { decodeBencodedInteger, decodeBencodedList, decodeBencodedString } from "./decode-handlers";
 
 class Decoder implements IDecoder {
     private handlers: Handler<DecodedValue | DecodedValue[]>[] = [];
@@ -34,8 +34,8 @@ class Decoder implements IDecoder {
 // Setup the decoder
 const decoder = new Decoder(
     (decoder) => {
-        decoder.register(stringDecodingHandler);
-        decoder.register(integerDecodingHandler);
+        decoder.register(decodeBencodedString);
+        decoder.register(decodeBencodedInteger);
         decoder.register(decodeBencodedList);
     }
 );
