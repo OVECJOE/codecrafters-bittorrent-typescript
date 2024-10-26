@@ -1,22 +1,42 @@
-import type { DecodedValue, EncodedValue } from "./types";
-import decoder from "./decoder";
+import { decodeBencode, getInfo } from "./actions";
+import { CLISupportedActions } from "./types";
+import { throwayIf } from "./utils";
 
-function decodeBencode(bencodedValue: EncodedValue): DecodedValue | DecodedValue[] {
-  const decoded = decoder.decode(bencodedValue);
-  if (decoded === null) {
-    throw new Error("Invalid bencoded value");
-  }
-  return decoded;
-}
+(() => {
+  const args = process.argv;
 
-const args = process.argv;
-const bencodedValue = args[3];
-
-if (args[2] === "decode") {
   try {
-    const decoded = decodeBencode(bencodedValue);
-    console.log(JSON.stringify(decoded));
+    if (args.length < 3) {
+      throw new Error("No action provided");
+    }
+  
+    if (!Object.values<string>(CLISupportedActions).includes(args[2])) {
+      throw new Error("Invalid action provided");
+    }
+
+    switch (args[2]) {
+      case CLISupportedActions.DECODE:
+        throwayIf(args.length < 4, "No bencoded value provided");
+        const bencodedValue = args[3];
+
+        console.time("decode");
+        console.log(JSON.stringify(decodeBencode(bencodedValue)));
+        console.timeEnd("decode");
+        break;
+      case CLISupportedActions.INFO:
+        throwayIf(args.length < 4, "No torrent file provided");
+        const torrentFile = args[3];
+        
+        console.time("info");
+        getInfo(torrentFile).then((info) => {
+          console.log(info);
+          console.timeEnd("info");
+        });
+        break;
+      default:
+        throw new Error("Invalid action provided");
+    }
   } catch (error: unknown) {
     console.error((error as Error).message);
   }
-}
+})()

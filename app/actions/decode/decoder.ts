@@ -1,4 +1,4 @@
-import type { DecodedValue, DecodedValueType, EncodedValue, Handler, IDecoder } from "./types";
+import type { DecodedValue, DecodedValueType, EncodedValue, Handler, IDecoder } from "../../types";
 import { decodeBencodedDictionary, decodeBencodedInteger, decodeBencodedList, decodeBencodedString } from "./decode-handlers";
 
 class Decoder implements IDecoder {

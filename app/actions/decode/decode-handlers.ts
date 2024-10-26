@@ -1,4 +1,4 @@
-import type { DecodedValue, Handler } from "./types";
+import type { DecodedValue, Handler } from "../../types";
 
 export const decodeBencodedString: Handler<string> = {
     /**
