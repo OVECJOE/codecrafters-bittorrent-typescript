@@ -1,10 +1,10 @@
-import fs from "node:fs/promises";
 import type { DecodedValue, EncodedValue, FileName, TorrentFileStructure } from "../types";
 import decoder from "./decode/decoder";
-import { readFileFast } from "../utils";
+import { readInChunks, throwayIf } from "../utils";
 import { decodeBencodedDictionary } from "./decode/decode-handlers";
+import { getByteSize, getInfoHash, getTrackerURL } from "./info/extractors";
 
-export function decodeBencode(bencodedValue: EncodedValue): DecodedValue | DecodedValue[] {
+export function decode(bencodedValue: EncodedValue): DecodedValue | DecodedValue[] {
   const decoded = decoder.decode(bencodedValue);
   if (decoded === null) {
     throw new Error("Invalid bencoded value");
@@ -13,20 +13,21 @@ export function decodeBencode(bencodedValue: EncodedValue): DecodedValue | Decod
 }
 
 export async function getInfo(torrentFile: string): Promise<string> {
-    const data = await readFileFast(torrentFile as FileName);
-    if (!data) {
-        throw new Error("Torrent file is empty");
-    }
+  let data: string | null = null;
 
-    if (!decodeBencodedDictionary.check(data)) {
-        throw new Error("Content is not a valid bencoded dictionary");
-    }
+  for await (const buffer of readInChunks(torrentFile as FileName, 'binary')) {
+    data = buffer.toString('binary');
+  }
 
-    let decoded: TorrentFileStructure, decodedSize: number, result = "";
-    [decoded, decodedSize] = decodeBencodedDictionary.action(data);
-    
-    result += `Tracker URL: ${decoded.announce}\n`;
-    result += `Length: ${decoded.info.length}\n`;
+  throwayIf(!data, "Torrent file is empty");
+  throwayIf(!decodeBencodedDictionary.check(data!), "Content is not a valid bencoded dictionary");
 
-    return result;
+  let decoded: TorrentFileStructure, decodedSize: number, result = "";
+  [decoded, decodedSize] = decodeBencodedDictionary.action(data!);
+
+  result += `Tracker URL: ${getTrackerURL(decoded)}\n`; // tracker URL used to find peers
+  result += `Length: ${getByteSize(decoded)}\n`; // length of the file to be downloaded (in bytes)
+  result += `Info hash: ${getInfoHash(decoded.info)}\n`; // hash of the bencoded info dictionary
+
+  return result;
 }
