@@ -12,8 +12,5 @@ export function getTrackerURL(decodedData: Pick<TorrentFileStructure, 'announce'
 }
 
 export function getInfoHash(info: TorrentFileStructure['info']): string {
-    // beencode the info dictionary
-    const bencodedInfo = bencodeDictionary(info);
-    // SHA1 hash the beencoded info dictionary
-    return hashUsing(bencodedInfo, 'sha1');
+    return hashUsing(bencodeDictionary(info), 'sha1');
 }
