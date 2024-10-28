@@ -24,7 +24,7 @@ export async function getInfo(torrentFile: string): Promise<string> {
 
   result += `Tracker URL: ${getTrackerURL(decoded)}\n`; // tracker URL used to find peers
   result += `Length: ${getByteSize(decoded)}\n`; // length of the file to be downloaded (in bytes)
-  result += `Info Hash: ${getInfoHash(decoded.info)}\n`; // hash of the bencoded info dictionary
+  result += `Info Hash: ${getInfoHash(decoded.info)}`; // hash of the bencoded info dictionary
 
   return result;
 }
